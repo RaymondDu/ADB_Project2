@@ -26,7 +26,7 @@ public class BingTest {
 		byte[] accountKeyBytes = Base64.encodeBase64((accountKey + ":" + accountKey).getBytes());
 		String accountKeyEnc = new String(accountKeyBytes);
         
-		URL url = new URL(bingUrl);
+		URL url = new URL(bingURL);
 		URLConnection urlConnection = url.openConnection();
 		urlConnection.setRequestProperty("Authorization", "Basic " + accountKeyEnc);
         
@@ -84,7 +84,7 @@ public class BingTest {
 		}
         
         
-        key = java.net.URLEncoder.encode(query, "utf8");
+        String key = java.net.URLEncoder.encode(query, "utf8");
         String content = getMatchResultNum(key);
         int match_num = parseJSON(content);
         System.out.println("We get "+match_num+" matching results.");
