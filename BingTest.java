@@ -72,6 +72,9 @@ public class BingTest {
     
 	public static void main(String[] args) throws IOException {
         
+        Tree.getTree();
+        Tree.printTree();
+        
         System.out.println("Please input site and query:");
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String query = null;
