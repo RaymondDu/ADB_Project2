@@ -66,15 +66,18 @@ public class BingTest {
         return Integer.parseInt(result);
 	}
 	
-    
+    public TreeNode Classify(TreeNode category, String site, Double spec, int coverage) {
+        if (category.children == null) {
+            return category;
+        }
+        
+    }
    
 /* main thread */
     
 	public static void main(String[] args) throws IOException {
         
-        Tree.getTree();
-        Tree.printTree();
-        
+        Classify(Tree.getTree(), "diabets.org", 0.6, 100);
         System.out.println("Please input site and query:");
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String query = null;
