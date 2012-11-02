@@ -9,17 +9,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.TreeMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.Iterator;
 import org.json.simple.*;
 import org.json.simple.parser.ContainerFactory;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.apache.commons.codec.binary.Base64;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 
 public class BingTest {
 	public static String getMatchResultNum(String query) throws IOException {
 		
-        String bingURL = "https://api.datamarket.azure.com/Data.ashx/Bing/SearchWeb/v1/Composite?Query=%27site%3a"+query+"%27&$top=10&$format=Json";
+        String bingURL = "https://api.datamarket.azure.com/Data.ashx/Bing/SearchWeb/v1/Composite?Query=%27site%3a"+query+"%27&$top=4&$format=Json";
 		//Provide your account key here.
 		String accountKey = "wRccq1TMy476bqFdC1GrKeHeJ33Fm+hmzSwYWgmtSrM=";
 		
@@ -40,9 +47,30 @@ public class BingTest {
     
     
     
-		public static Integer parseJSON(String jsonStr) {
+	public static Integer parseJSON(TreeNode node, String jsonStr) {
         
-        String result = "";
+		// find DisplayURl
+		JSONParser parser3 = new JSONParser();
+		KeyFinder finder3 = new KeyFinder();
+		finder3.setMatchKey("Url");
+		try{
+		    	while(!finder3.isEnd()){
+                		parser3.parse(jsonStr, finder3, true);
+                		if(finder3.isFound()){
+                    			finder3.setFound(false);
+                    			String s = finder3.getValue().toString();
+                    			node.URL.add(s);
+                		}
+		    	}
+        	} catch (ParseException pe) {
+			pe.printStackTrace();
+        	}
+
+
+
+
+
+        	String result = "";
 		JSONParser parser = new JSONParser();
 		KeyFinder finder = new KeyFinder();
 		finder.setMatchKey("WebTotal");
@@ -66,14 +94,14 @@ public class BingTest {
         return Integer.parseInt(result);
 	}
 	
-    public static int calcCoverage(String site, ArrayList<String> query){
+    public static int calcCoverage(TreeNode node, String site, ArrayList<String> query){
         int coverage = 0;
         for (int i =0; i< query.size();i++){
             try {
                 String q = site+" "+query.get(i);
                 String key = java.net.URLEncoder.encode(q, "utf8");
                 String content = getMatchResultNum(key);
-                coverage = coverage + parseJSON(content);
+                coverage = coverage + parseJSON(node, content);
             }
             catch (Exception e){
                 
@@ -90,8 +118,9 @@ public class BingTest {
         }
         int sumCoverage = 0;
         for (int i = 0; i < category.children.size(); i++){
-            category.coverage.add(calcCoverage(site, category.words.get(i)));
-            sumCoverage = sumCoverage + calcCoverage(site,category.words.get(i));
+	    int tmp = calcCoverage(category,site, category.words.get(i));
+            category.coverage.add(tmp);
+            sumCoverage = sumCoverage + tmp;
         }
         Double parentSpecifity = 1.0;
         if (category.parent!= null){
@@ -106,16 +135,60 @@ public class BingTest {
         }
         for (int i = 0; i< category.children.size(); i++){
             if (category.coverage.get(i)>coverage && category.specifity.get(i)>spec){
+		category.match = true;
                 result.addAll(Classify(category.children.get(i),site,spec,coverage));
             }
         }
         if (result.size()==0){
-            result.add(category);
+            result.add(category);	    
         }
         return result;
     }
     
-   
+	public static void getContentSummary(TreeNode node,String site){
+		for (int i = 0; i<node.children.size();i++){
+			if (node.children.get(i).match == true){
+				getContentSummary(node.children.get(i),site);
+				node.URL.addAll(node.children.get(i).URL);
+			}
+		}
+		System.out.println("Constructing content summary for "+node.name);
+		TreeMap<String, Integer> wordCount = new TreeMap<String, Integer>();
+		Iterator<String> i = node.URL.iterator();
+		int count = 0;
+		while (i.hasNext()){
+			String tmp = i.next();
+			count++;
+			System.out.println(count +"/" + node.URL.size()+" Working on "+tmp);
+			Set local = getWordsLynx.runLynx(tmp);
+			Iterator j = local.iterator();
+			while(j.hasNext()){
+				String word = j.next().toString();
+				if (wordCount.containsKey(word)){
+					wordCount.put(word, wordCount.get(word)+1);
+				} else {
+					wordCount.put(word, 1);
+				}
+			}
+		}
+		try {
+			File file = new File(node.name+"-"+site+".txt");
+			BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+			Set<Map.Entry<String,Integer>> setWordCount= wordCount.entrySet(); 
+			Iterator<Map.Entry<String,Integer>> k = setWordCount.iterator();
+			while (k.hasNext()){
+				Map.Entry next = k.next();
+				writer.write(next.getKey()+"#"+next.getValue()+"\n");
+				writer.flush();
+			}
+			writer.close();
+		} catch (Exception e){
+			System.err.println("Cannot write to file");
+		}
+
+
+	}
+
 /* main thread */
     
 	public static void main(String[] args) throws IOException {
@@ -164,11 +237,11 @@ public class BingTest {
         
         
         
-        ArrayList<TreeNode> classficationResult = Classify(Tree.getTree(), site, specifity, coverage);
+        ArrayList<TreeNode> classificationResult = Classify(Tree.getTree(), site, specifity, coverage);
         //Tree.printTree();
         System.out.println("Classsification:");
-        for (int i = 0; i < classficationResult.size(); i++){
-            TreeNode tmp = classficationResult.get(i);
+        for (int i = 0; i < classificationResult.size(); i++){
+            TreeNode tmp = classificationResult.get(i);
             String s = tmp.name;
             while (tmp.parent != null){
                 tmp = tmp.parent;
@@ -176,25 +249,10 @@ public class BingTest {
             }
             System.out.println(s);
         }
-        /*
-        System.out.println("Please input site and query:");
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        String query = null;
-		try {
-			query = br.readLine();
-			
-		} catch (IOException ioe) {
-			System.out.println("IO error trying to read your Query!");
-			System.exit(1);
-		}
-        
-        
-        String key = java.net.URLEncoder.encode(query, "utf8");
-        String content = getMatchResultNum(key);
-        int match_num = parseJSON(content);
-        System.out.println("We get "+match_num+" matching results.");
-        System.exit(0);
-        */
+
+
+	//Get Content Summary;
+	getContentSummary(Tree.getTree(),site);
 	}
     
         

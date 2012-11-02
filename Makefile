@@ -2,13 +2,14 @@ JFLAGS = -cp "commons-codec-1.7.jar:json-simple-1.1.1.jar"
 JC = javac
 .SUFFIXES: .java .class
 .java.class:
-	$(JC) $(JFLAGS) BingTest.java KeyFinder.java Tree.java TreeNode.java
+	$(JC) $(JFLAGS) BingTest.java KeyFinder.java Tree.java TreeNode.java getWordsLynx.java
 
 CLASSES = \
         BingTest.java \
 	KeyFinder.java \
 	Tree.java \
-	TreeNode.java
+	TreeNode.java \
+	getWordsLynx.java
 
 default: classes
 

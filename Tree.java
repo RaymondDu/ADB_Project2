@@ -3,6 +3,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class Tree {
     private static TreeNode tree = null;
@@ -49,12 +50,14 @@ public class Tree {
     private static TreeNode Build(String name, TreeNode parent){
         //System.out.println("Build:"+name);
         TreeNode node = new TreeNode();
+	node.match = false;
         node.name = name;
         node.parent = parent;
         node.children = null;
         node.words = null;
         node.coverage = null;
         node.specifity = null;
+	node.URL=null;
         File f = new File(name.toLowerCase()+".txt");
         //System.out.println(f.exists());
 
@@ -92,6 +95,7 @@ public class Tree {
                 reader.close();
                 node.coverage = new ArrayList<Integer>(node.children.size());
                 node.specifity = new ArrayList<Double>(node.children.size());
+		node.URL = new HashSet<String>();
             } catch (Exception e){
                 System.out.println(e.getMessage());
             }
