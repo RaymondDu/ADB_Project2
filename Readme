@@ -1,0 +1,54 @@
+a) Team members:
+Rongxin Du	rd2537
+Chao Song	cs2994
+
+b) List of files:
+BingTest.java				--our sourcefile
+KeyFinder.java			--a helper class from Internet
+Makefile				--our makefile
+Readme				--our readme
+commons-codec-1.7.jar		--a library
+json-simple-1.1.1.jar			--another library
+test_snow_leopard			--transcript for running query “snow leopard”
+test_gates				--transcript for running query “gates”
+test_bill				--transcript for running query “bill”
+
+c) 
+To compile our program, type “make”.
+To run our program, type “make run”
+User will need to input arguments such as query and precision in the program. 
+
+d, e)
+Internal Design of our project:
+1. User input query and desired precision. We split user query into an ArrayList of separated words, e.g. if user inputs : ” bill gates”, we treat as [“bill”, “gates”]
+2. Feed the query to the Bing API by calling method getResult(query), returns JSON format string of the top 10 results.
+3. Parse the returned JSON string, retrieve the title, description and displayURL section for each query result. We use A Simple Java toolkit (jar file)for JSON from an open source project http://code.google.com/p/json-simple/
+In addition, we also use the Example 5 - Stoppable SAX-like content handler in the DecodingExamples sections here: http://code.google.com/p/json-simple/wiki/DecodingExamples
+4. while precision has not achieved what we desire
+	expand the query
+
+Query-modification method:
+We basically follow the tf-idf model illustrated in Wikipedia (http://en.wikipedia.org/wiki/Tf%E2%80%93idf)
+For tf(t,d), we use logarithmically scaled frequency:
+Formula 1: tf(t,d) = 1+ logf(t,d) (and 0 when f(t,d) = 0)
+For idf(t, D):
+Formula 2: idf(t, D) = log( |D| / |{d in D: t in d}| )
+ 
+NOTE: we only care about term frequency tf(t,d) and inverse document frequency idf(t,D) for those words that appear in RELEVANT query results labeled by user.
+ 
+1. Since we only retrieve the top 10 results for each query, we treat each of the 10 results as a document, and also we merge the title and description for each result as the document corpus.
+2. We split the document corpus into separate words, ignore punctuations like \ : | . , “ ( ) ‘  , and transform to lowercases. Then, treat each word as a term, count the term frequency, using the above Formula 1 to calculate the logarithmically scaled frequency.
+3. To calculate the idf, set |D| = 10, since we only retrieve top 10 results for any query.
+|{d in D: t in d}| means the number of documents where the term t appears, we maintain an ArrayList<HashMap<String, Integer>>, in which, there are 10 elements (indicates 10 results) in the ArrayList, each element is a HashMap<String, Integer> representing the mapping from word to the word count (frequency). To count |{d in D: t in d}| for term t,
+we only need to traverse the ArrayList, and for each HashMap element, if it contains term t as a key, then count++ for this particular term t
+4. Calculating the weight(term t), which reflects how important a word is to the relevant query results, highly weighted terms will become augmented query keywords.
+Weight(term t) = tf(t, d)*idf(t, D)
+5. How to determine the final augmented query keywords?
+We maintain a globalWeights which map all the unique words(term t) that appears in relevant query results corpus to the sum Weight(term t) .
+NOTE: sum here means, if term t appears in relevant result1, result3, and result10, and has Weight(t, d1), Weight(t, d3), and Weight(t, d10) separately, then we determine the weight for term t as the sum:
+Weight(t) = Weight(t, d1) + Weight(t, d3) + Weight(t, d10)
+The two augmented new words are selected as the max-weighted term T1, along with the second max-weighted term T2. We augment 2 new words to the original query for every new iteration. 
+ 
+
+f) account key
+wRccq1TMy476bqFdC1GrKeHeJ33Fm+hmzSwYWgmtSrM=
