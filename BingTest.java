@@ -53,10 +53,12 @@ public class BingTest {
 		JSONParser parser3 = new JSONParser();
 		KeyFinder finder3 = new KeyFinder();
 		finder3.setMatchKey("Url");
+        int count = 0;
 		try{
 		    	while(!finder3.isEnd()){
                 		parser3.parse(jsonStr, finder3, true);
-                		if(finder3.isFound()){
+                		if(finder3.isFound() && count<4){
+                                count++;
                     			finder3.setFound(false);
                     			String s = finder3.getValue().toString();
                     			node.URL.add(s);
@@ -169,7 +171,8 @@ public class BingTest {
 			}
 		}
         System.out.println("===========================================");
-		System.out.println("Constructing content summary for "+node.name);
+        System.out.println("===========================================");
+		System.out.println("Constructing content summary for: "+node.name);
         
 		TreeMap<String, Integer> wordCount = new TreeMap<String, Integer>();
 		Iterator<String> i = node.URL.iterator();
@@ -254,16 +257,12 @@ public class BingTest {
         }
         
         
-        
+        System.out.println("Classifying ... Please be patient, grab a cup of coffee and then come back ...");
         ArrayList<TreeNode> classificationResult = Classify(Tree.getTree(), site, specifity, coverage);
-        System.out.println("Rongxin Testing ...");
-        for(int i=0; i<classificationResult.size(); i++) {
-            
-            System.out.print(classificationResult.get(i).name+"\t\t");
-        }
-     
-        System.out.println("Classsification:");
+                
+        
         for (int i = 0; i < classificationResult.size(); i++){
+            System.out.println("Classification Path: ");
             TreeNode tmp = classificationResult.get(i);
             String s = tmp.name;
             while (tmp.parent != null){
@@ -271,6 +270,7 @@ public class BingTest {
                 s = tmp.name + "/" +s; 
             }
             System.out.println(s);
+            
         }
 
 

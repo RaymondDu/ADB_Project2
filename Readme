@@ -31,7 +31,11 @@ User will need to input arguments such as query and precision in the program.
 
 d, e)
 Internal Design of our project:
-Our tree looks like the following:
+workflow:
+Step1: User input the site URL (the database you need to classify, e.g. fifa.com)When getTree is called, we will start building the tree in a top-bottom fashion recursively, from the “Root” node all the way to the leaf nodes.Step2: User input coverage and we set the coverage (need to be an Integer)Step3: User input specifity and we set the specifity (need to be a Double)
+Step4: Initialize the classification-tree and classify the database, print out all the possible classification path that is big enough on both Coverage and Specifity
+Step5: build content summary for each node in the classification path, except the leaf nodes, e.g. for Root->Sports->Soccer, we build content summary for node Root and node Sports
+Implmentation:Our classification-tree looks like the following:
 					Root
 	Computers			Health				Sports
 	children[0]			children[1]			children[2]
