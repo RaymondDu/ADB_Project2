@@ -66,18 +66,117 @@ public class BingTest {
         return Integer.parseInt(result);
 	}
 	
-    public TreeNode Classify(TreeNode category, String site, Double spec, int coverage) {
-        if (category.children == null) {
-            return category;
+    public static int calcCoverage(String site, ArrayList<String> query){
+        int coverage = 0;
+        for (int i =0; i< query.size();i++){
+            try {
+                String q = site+" "+query.get(i);
+                String key = java.net.URLEncoder.encode(q, "utf8");
+                String content = getMatchResultNum(key);
+                coverage = coverage + parseJSON(content);
+            }
+            catch (Exception e){
+                
+            }
         }
-        
+        return coverage;
     }
+    
+    public static ArrayList<TreeNode> Classify(TreeNode category, String site, Double spec, int coverage) {
+        ArrayList<TreeNode> result = new ArrayList<TreeNode>();
+        if (category.children==null){
+            result.add(category);
+            return result;
+        }
+        int sumCoverage = 0;
+        for (int i = 0; i < category.children.size(); i++){
+            category.coverage.add(calcCoverage(site, category.words.get(i)));
+            sumCoverage = sumCoverage + calcCoverage(site,category.words.get(i));
+        }
+        Double parentSpecifity = 1.0;
+        if (category.parent!= null){
+            parentSpecifity = category.parent.specifity.get(category.parent.children.indexOf(category));
+        }
+        for (int i = 0; i < category.children.size(); i++){
+            if (sumCoverage >0){
+                category.specifity.add(parentSpecifity*category.coverage.get(i)/sumCoverage);
+            } else {
+                category.specifity.add(0.0);
+            }
+        }
+        for (int i = 0; i< category.children.size(); i++){
+            if (category.coverage.get(i)>coverage && category.specifity.get(i)>spec){
+                result.addAll(Classify(category.children.get(i),site,spec,coverage));
+            }
+        }
+        if (result.size()==0){
+            result.add(category);
+        }
+        return result;
+    }
+    
    
 /* main thread */
     
 	public static void main(String[] args) throws IOException {
         
-        Classify(Tree.getTree(), "diabets.org", 0.6, 100);
+        System.out.println("Please input site:");
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        String site = null;
+		try {
+			site = br.readLine();
+			
+		} catch (IOException ioe) {
+			System.out.println("IO error trying to read your site!");
+			System.exit(1);
+		}
+        
+        System.out.println("Please input coverage:");
+		BufferedReader br2 = new BufferedReader(new InputStreamReader(System.in));
+        String coverageString = null;
+        int coverage = 0;
+		try {
+			coverageString = br2.readLine();
+            coverage = Integer.parseInt(coverageString);
+		} catch (IOException ioe) {
+			System.out.println("IO error trying to read your input!");
+			System.exit(1);
+		} catch (NumberFormatException nfe) {
+            System.out.println("Not a integer");
+			System.exit(1);
+        }
+        
+        
+        System.out.println("Please input specifity:");
+		BufferedReader br3 = new BufferedReader(new InputStreamReader(System.in));
+        String specifityString = null;
+        double specifity = 0;
+		try {
+			specifityString = br2.readLine();
+            specifity = Double.parseDouble(specifityString);
+		} catch (IOException ioe) {
+			System.out.println("IO error trying to read your input!");
+			System.exit(1);
+		} catch (NumberFormatException nfe) {
+            System.out.println("Not a double");
+			System.exit(1);
+        }
+        
+        
+        
+        ArrayList<TreeNode> classficationResult = Classify(Tree.getTree(), site, specifity, coverage);
+        //Tree.printTree();
+        System.out.println("Classsification:");
+        for (int i = 0; i < classficationResult.size(); i++){
+            TreeNode tmp = classficationResult.get(i);
+            String s = tmp.name;
+            while (tmp.parent != null){
+                tmp = tmp.parent;
+                s = tmp.name + "/" +s; 
+            }
+            System.out.println(s);
+        }
+        /*
         System.out.println("Please input site and query:");
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String query = null;
@@ -95,7 +194,7 @@ public class BingTest {
         int match_num = parseJSON(content);
         System.out.println("We get "+match_num+" matching results.");
         System.exit(0);
-            
+        */
 	}
     
         

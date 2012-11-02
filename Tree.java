@@ -25,9 +25,13 @@ public class Tree {
     }
     public static void printTreeRec(TreeNode tmp){
         System.out.println(tmp.name);
+        
         if (tmp.words != null){
             for (int i = 0; i<tmp.words.size();i++){
                 System.out.println("\t"+tmp.children.get(i).name);
+                if (tmp.coverage!=null && tmp.coverage.size()>0){
+                    System.out.println("\t"+"Coverage:"+tmp.coverage.get(i)+" Specifity: "+tmp.specifity.get(i));
+                }
                 for (int j = 0; j < tmp.words.get(i).size();j++){
                     System.out.println("\t\t"+tmp.words.get(i).get(j));
                 }
@@ -39,6 +43,9 @@ public class Tree {
             }
         }
     }
+    
+    
+    
     private static TreeNode Build(String name, TreeNode parent){
         //System.out.println("Build:"+name);
         TreeNode node = new TreeNode();
@@ -46,11 +53,12 @@ public class Tree {
         node.parent = parent;
         node.children = null;
         node.words = null;
+        node.coverage = null;
+        node.specifity = null;
         File f = new File(name.toLowerCase()+".txt");
         //System.out.println(f.exists());
 
         //System.out.println(f.exists());
-
         if (f.exists()){
             node.children = new ArrayList<TreeNode>();
             node.words = new ArrayList<ArrayList<String>>();
@@ -82,9 +90,13 @@ public class Tree {
       
                 }
                 reader.close();
+                node.coverage = new ArrayList<Integer>(node.children.size());
+                node.specifity = new ArrayList<Double>(node.children.size());
             } catch (Exception e){
                 System.out.println(e.getMessage());
             }
+            
+            
         }
         return node;
     }
