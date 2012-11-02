@@ -46,42 +46,43 @@ public class Tree {
     }
     
     
-    
+    /* recursively build the tree from root node to leaf nodes */
+    /* return the root of this built classification tree */
     private static TreeNode Build(String name, TreeNode parent){
-        //System.out.println("Build:"+name);
+        
         TreeNode node = new TreeNode();
-	node.match = false;
+        node.match = false;
         node.name = name;
         node.parent = parent;
         node.children = null;
         node.words = null;
         node.coverage = null;
         node.specifity = null;
-	node.URL=null;
+        node.URL=null;
         File f = new File(name.toLowerCase()+".txt");
-        //System.out.println(f.exists());
-
-        //System.out.println(f.exists());
+        
         if (f.exists()){
             node.children = new ArrayList<TreeNode>();
             node.words = new ArrayList<ArrayList<String>>();
             try{
                 BufferedReader reader = new BufferedReader(new FileReader(f));
                 
-                
-                
+                // read the file line by line
                 String line = null;
                 while ((line=reader.readLine()) != null) {
+                    // get the type (category)
                     String type = line.substring(0,line.indexOf(" "));
+                    // get the query part
                     String keyword = line.substring(line.indexOf(" ")+1);
                     
 
                     if (node.children.size()==0){
-                       
+                        // if has no child, build child and append to children arraylist
                         node.children.add(Build(type, node));
                         node.words.add(new ArrayList<String>());
                         node.words.get(node.words.size()-1).add(keyword);
                     } else {
+                        // if this child category already exits
                         if (type.equals(node.children.get(node.children.size()-1).name)){
                             node.words.get(node.words.size()-1).add(keyword);
                         } else {
@@ -95,7 +96,7 @@ public class Tree {
                 reader.close();
                 node.coverage = new ArrayList<Integer>(node.children.size());
                 node.specifity = new ArrayList<Double>(node.children.size());
-		node.URL = new HashSet<String>();
+                node.URL = new HashSet<String>();
             } catch (Exception e){
                 System.out.println(e.getMessage());
             }

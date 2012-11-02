@@ -24,10 +24,10 @@ import java.io.File;
 import java.io.FileWriter;
 
 public class BingTest {
-	public static String getMatchResultNum(String query) throws IOException {
+	public static String getJSONResults(String query) throws IOException {
 		
         String bingURL = "https://api.datamarket.azure.com/Data.ashx/Bing/SearchWeb/v1/Composite?Query=%27site%3a"+query+"%27&$top=4&$format=Json";
-		//Provide your account key here.
+		//account key here
 		String accountKey = "wRccq1TMy476bqFdC1GrKeHeJ33Fm+hmzSwYWgmtSrM=";
 		
 		byte[] accountKeyBytes = Base64.encodeBase64((accountKey + ":" + accountKey).getBytes());
@@ -46,10 +46,10 @@ public class BingTest {
 	}
     
     
-    
+    /* retrieve all the page urls related to a query, return number of match results */
 	public static Integer parseJSON(TreeNode node, String jsonStr) {
         
-		// find DisplayURl
+		// find DisplayURl, and add the urls of all the returned pages to node.URL
 		JSONParser parser3 = new JSONParser();
 		KeyFinder finder3 = new KeyFinder();
 		finder3.setMatchKey("Url");
@@ -62,15 +62,13 @@ public class BingTest {
                     			node.URL.add(s);
                 		}
 		    	}
-        	} catch (ParseException pe) {
+        }
+        catch (ParseException pe){
 			pe.printStackTrace();
-        	}
+        }
 
 
-
-
-
-        	String result = "";
+        String result = "";
 		JSONParser parser = new JSONParser();
 		KeyFinder finder = new KeyFinder();
 		finder.setMatchKey("WebTotal");
@@ -94,13 +92,18 @@ public class BingTest {
         return Integer.parseInt(result);
 	}
 	
+    /* given a site url, a list of prob queries
+     * return the estimated coverage of the given node 
+     */
     public static int calcCoverage(TreeNode node, String site, ArrayList<String> query){
         int coverage = 0;
+        // loop through all the queries, issue each to the database(site url)
+        // sum up the number of match results
         for (int i =0; i< query.size();i++){
             try {
                 String q = site+" "+query.get(i);
                 String key = java.net.URLEncoder.encode(q, "utf8");
-                String content = getMatchResultNum(key);
+                String content = getJSONResults(key);
                 coverage = coverage + parseJSON(node, content);
             }
             catch (Exception e){
@@ -110,22 +113,29 @@ public class BingTest {
         return coverage;
     }
     
+    
+    // classification algorithm in figure 4
     public static ArrayList<TreeNode> Classify(TreeNode category, String site, Double spec, int coverage) {
         ArrayList<TreeNode> result = new ArrayList<TreeNode>();
+        
         if (category.children==null){
             result.add(category);
             return result;
         }
+        // calculate the ECoverage of TreeNode category
         int sumCoverage = 0;
+        
         for (int i = 0; i < category.children.size(); i++){
-	    int tmp = calcCoverage(category,site, category.words.get(i));
+            int tmp = calcCoverage(category,site, category.words.get(i));
             category.coverage.add(tmp);
             sumCoverage = sumCoverage + tmp;
         }
+      
         Double parentSpecifity = 1.0;
         if (category.parent!= null){
             parentSpecifity = category.parent.specifity.get(category.parent.children.indexOf(category));
         }
+        // calculate the specifity vector
         for (int i = 0; i < category.children.size(); i++){
             if (sumCoverage >0){
                 category.specifity.add(parentSpecifity*category.coverage.get(i)/sumCoverage);
@@ -133,9 +143,10 @@ public class BingTest {
                 category.specifity.add(0.0);
             }
         }
+        // loop through all subcategories Ci of C
         for (int i = 0; i< category.children.size(); i++){
             if (category.coverage.get(i)>coverage && category.specifity.get(i)>spec){
-		category.match = true;
+                category.match = true;
                 result.addAll(Classify(category.children.get(i),site,spec,coverage));
             }
         }
@@ -145,21 +156,28 @@ public class BingTest {
         return result;
     }
     
+    
+    
 	public static void getContentSummary(TreeNode node,String site){
+        // loop through all the children node, if a children node is big enough
+        // in coverage and specifity, then recursively explore this children node
+        // therefore get all the related urls
 		for (int i = 0; i<node.children.size();i++){
 			if (node.children.get(i).match == true){
 				getContentSummary(node.children.get(i),site);
 				node.URL.addAll(node.children.get(i).URL);
 			}
 		}
+        System.out.println("===========================================");
 		System.out.println("Constructing content summary for "+node.name);
+        
 		TreeMap<String, Integer> wordCount = new TreeMap<String, Integer>();
 		Iterator<String> i = node.URL.iterator();
 		int count = 0;
 		while (i.hasNext()){
 			String tmp = i.next();
 			count++;
-			System.out.println(count +"/" + node.URL.size()+" Working on "+tmp);
+			System.out.println(count +"/" + node.URL.size()+" Getting Page "+tmp);
 			Set local = getWordsLynx.runLynx(tmp);
 			Iterator j = local.iterator();
 			while(j.hasNext()){
@@ -238,7 +256,12 @@ public class BingTest {
         
         
         ArrayList<TreeNode> classificationResult = Classify(Tree.getTree(), site, specifity, coverage);
-        //Tree.printTree();
+        System.out.println("Rongxin Testing ...");
+        for(int i=0; i<classificationResult.size(); i++) {
+            
+            System.out.print(classificationResult.get(i).name+"\t\t");
+        }
+     
         System.out.println("Classsification:");
         for (int i = 0; i < classificationResult.size(); i++){
             TreeNode tmp = classificationResult.get(i);
@@ -251,8 +274,8 @@ public class BingTest {
         }
 
 
-	//Get Content Summary;
-	getContentSummary(Tree.getTree(),site);
+        //Get Content Summary
+        getContentSummary(Tree.getTree(),site);
 	}
     
         
