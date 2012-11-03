@@ -7,6 +7,9 @@ BingTest.java:
 	our sourcefile including all the methods and the main thread;
 KeyFinder.java:
 	a helper class from Internet for finding value according to key in JSON files
+getWordsLynx.java:
+	downloaded from http://www.cs.columbia.edu/~gravano/cs6111/Proj2/data/getWordsLynx.java
+	This script converts an HTML document to lowercase, treats any character not in the English alphabet as a word separator, and  then returns the set of  words that appear in the document.
 TreeNode.java:
 	the data structure for each node in the classification tree-hierarchy schema;Tree.java: 
 	build the tree according to the given schema, i.e., root.txt, computers.txt, sports.txt, health.txt
@@ -18,6 +21,7 @@ sports.txt:
 	downloaded from http://www.cs.columbia.edu/~gravano/cs6111/Proj2/data/sports.txt
 health.txt:
 	downloaded from http://www.cs.columbia.edu/~gravano/cs6111/Proj2/data/health.txt
+
 
 Makefile				--our makefile
 Readme					--our readme
