@@ -27,7 +27,6 @@ json-simple-1.1.1.jar			--another library for parsing json file
 c) 
 To compile our program, type “make”.
 To run our program, type “make run”
-User will need to input arguments such as query and precision in the program. 
 
 d, e)
 Internal Design of our project:
@@ -35,7 +34,8 @@ workflow:
 Step1: User input the site URL (the database you need to classify, e.g. fifa.com)When getTree is called, we will start building the tree in a top-bottom fashion recursively, from the “Root” node all the way to the leaf nodes.Step2: User input coverage and we set the coverage (need to be an Integer)Step3: User input specifity and we set the specifity (need to be a Double)
 Step4: Initialize the classification-tree and classify the database, print out all the possible classification path that is big enough on both Coverage and Specifity
 Step5: build content summary for each node in the classification path, except the leaf nodes, e.g. for Root->Sports->Soccer, we build content summary for node Root and node Sports
-Implmentation:Our classification-tree looks like the following:
+Implmentation:
+Part1: Web Database ClassificationOur classification-tree looks like the following:
 					Root
 	Computers			Health				Sports
 	children[0]			children[1]			children[2]
@@ -46,10 +46,19 @@ Hardware	Programming	Fitness		Diseases	Basketball	Soccer
 children[0]	children[1]	children[0]	children[1]	children[0]	children[1]
 words[0][:]	words[1][:]	words[0][:]	words[1][:]	words[0][:]	words[1][:]
 coverage[0]	coverage[1]	coverage[0]	coverage[1]	coverage[0]	coverage[1]
-specifity[0]	specifity[1]	specifity[0]	specifity[1]	specifity[0]	specifity[1]	
+specifity[0]	specifity[1]	specifity[0]	specifity[1]	specifity[0]	specifity[1]
 
-3. Parse the returned JSON string, retrieve the title, description and displayURL section for each query result. We use A Simple Java toolkit (jar file)for JSON from an open source project http://code.google.com/p/json-simple/
+In the above tree, a TreeNode has an ArrayList<TreeNode> as children, an ArrayList<ArrayList<String>> as words, which represents a list of prob queries with respect to each child category , an ArrayList<Integer> as coverage with respect to each child category, an ArrayList<Double> as specifity with respect to each child category.
+
+In parsing the returned JSON string, retrieve the WebTotal(# of match results) and Url of result pages, we use A Simple Java toolkit (jar file)for JSON from an open source project http://code.google.com/p/json-simple/
 In addition, we also use the Example 5 - Stoppable SAX-like content handler in the DecodingExamples sections here: http://code.google.com/p/json-simple/wiki/DecodingExamples
 
+The following method implemented the figure 4 classification algorithm of the Qprober paper:public static ArrayList<TreeNode> Classify(TreeNode category, String site, Double spec, int coverage) {}To calculate ECoverage of the current TreeNode category, we issue all the queries under this category(queries related to each of its child node) to the database, and sum up the number of matching results.We get rid of the confusion matrix adjustment step.To calculate the ESpecifity vector (an ArrayList of Double ESpecifity value of its children nodes), we followed the formula:Especifity(D, C(i)) = ECoverage(D, C(i)) * Especifity(D, Parent(Ci)) / SUM( ECoverage all the children nodes of Parent(Ci))Note that if any subcategory(children node) of the current TreeNode category is big enough in Coverage and Specifity, we will set its match attribute to True, and recursively explore (classify) this subcategory.
+Part 2a: Document Sampling
+To only sample the top-4 pages for each query, we simply add a counter in parseJSON(TreeNode node, String jsonStr) method to count found Urls, we stop as soon as we have found the first 4 pages. And since we use a HashSet data structure to store these Urls, we can get rid of the duplicates each time we insert.
+Part 2b: Content Summary Construction
+The method: public static void getContentSummary(TreeNode node,String site){} implemented the content summary construction. This method basically loop through all the children nodes, collecting all the urls of pages, if a child node is big enough in coverage and specifity, then recursively explore this node (call getContentSummary on this node).
+We simply use the java script from http://www.cs.columbia.edu/~gravano/cs6111/Proj2/data/getWordsLynx.java to convert an HTML document to lowercase, and returns the set of words that appear in the document,We use a TreeMap<String, Integer> to do the word count, so that all the <word, count> pairs are sorted in alphabetical order. Besides, since for each page (Url), calling getWordsLynx.runLynx(Url) will return a Set of unique words, counting word frequency here is equal to counting the document frequency, therefore we get the number of documents in the sample that contain that word.
+By the way, we decide not to include multiple-word information (like cables drive floppy#0.0)in the content summaries. Besides, our program doesn't output the <number of matches> field.
 f) account key
 wRccq1TMy476bqFdC1GrKeHeJ33Fm+hmzSwYWgmtSrM=

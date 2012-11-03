@@ -49,19 +49,22 @@ public class BingTest {
     /* retrieve all the page urls related to a query, return number of match results */
 	public static Integer parseJSON(TreeNode node, String jsonStr) {
         
-		// find DisplayURl, and add the urls of all the returned pages to node.URL
+		// find URl, and add the urls of all the returned pages to node.URL
 		JSONParser parser3 = new JSONParser();
 		KeyFinder finder3 = new KeyFinder();
 		finder3.setMatchKey("Url");
-        int count = 0;
+        
 		try{
+                int count = 0;
 		    	while(!finder3.isEnd()){
                 		parser3.parse(jsonStr, finder3, true);
-                		if(finder3.isFound() && count<4){
-                                count++;
+                		if(finder3.isFound()){
+                                
                     			finder3.setFound(false);
                     			String s = finder3.getValue().toString();
                     			node.URL.add(s);
+                                count++;
+                                if(count == 4)  break;
                 		}
 		    	}
         }
